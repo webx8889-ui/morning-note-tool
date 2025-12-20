@@ -15,7 +15,7 @@ origins = [
     "http://localhost:5500",
     "http://127.0.0.1:8000",
     "https://morning-note-tool.onrender.com",          
-    "https://<tumhara-github-username>.github.io",     # jab frontend GitHub Pages pe hoga
+    "https://webxds.com",     # jab frontend GitHub Pages pe hoga
     "*"                                                # abhi debug ke liye; baad me hata sakte ho
 ]
 
