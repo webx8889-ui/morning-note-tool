@@ -112,7 +112,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 </td>
                 <!-- LOGO (Right) -->
                 <td align="right" valign="middle">
-                    <a href="#"><img src="images/bajaj-broking-logo.png"
+                    <a href="#"><img src="https://webxds.com/images/bajaj-broking-logo.png"
                             alt="" style="width: 90px;height: auto;"/></a>
                 </td>
               </tr>
