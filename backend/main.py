@@ -15,8 +15,8 @@ origins = [
     "http://localhost:5500",
     "http://127.0.0.1:8000",
     "https://morning-note-tool.onrender.com",          
-    "https://webxds.com",     # jab frontend GitHub Pages pe hoga
-    "*"                                                # abhi debug ke liye; baad me hata sakte ho
+    "https://webxds.com",     
+    "*"                                               
 ]
 
 app.add_middleware(
@@ -730,6 +730,12 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
         if txt:
             nifty_points_html += f"<li>{txt}</li>"
 
+    bank_nifty_points_html = ""
+    for row in range(51, 54):
+        txt = cell(ws, f"A{row}")
+        if txt:
+            bank_nifty_points_html += f"<li>{txt}</li>"
+
     # ----- STOCKS IN FOCUS -----
     stocks_rows_html = ""
     for r in range(73, 89):
@@ -880,7 +886,7 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
 
         "nifty_option_points" : nifty_points_html,
         "bank_option_heading":  cell(ws, "A50"),
-        "bank_option_points":   nifty_points_html,
+        "bank_option_points":   bank_nifty_points_html,
         "fo_source":            cell(ws, "A56"),
         "fo_ban_stocks":        cell(ws, "A57"),
 
