@@ -725,13 +725,13 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
 
     # ----- F&O points -----
     nifty_points_html = ""
-    for row in range(45, 48):
+    for row in range(45, 49):
         txt = cell(ws, f"A{row}")
         if txt:
             nifty_points_html += f"<li>{txt}</li>"
 
     bank_nifty_points_html = ""
-    for row in range(51, 54):
+    for row in range(51, 55):
         txt = cell(ws, f"A{row}")
         if txt:
             bank_nifty_points_html += f"<li>{txt}</li>"
