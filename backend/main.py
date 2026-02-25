@@ -80,7 +80,7 @@ def fmt_date(v):
         return v
     return ""
 
-# ---------- HTML template (unchanged, trimmed here for brevity) ----------
+# ---------- HTML template (matches new template exactly) ----------
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -301,9 +301,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     <tr>
                       <td style="font-size:14px; font-weight:600; color:#374151; padding-bottom:4px;">{flows_heading}</td>
                     </tr>
-                    # <tr>
-                    #   <td style="font-size:11px; color:#6b7280; padding-bottom:10px;">{flows_subtext}</td>
-                    # </tr>
+                    <tr>
+                      <td style="font-size:11px; color:#6b7280; padding-bottom:10px;">{flows_subtext}</td>
+                    </tr>
                   </table>
 
                   <!-- FII/DII TABLE -->
@@ -331,7 +331,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                       </tr>
                     </tbody>
                   </table>
-                  # <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">{flows_source}</p>
+                  <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">{flows_source}</p>
 
                   <!-- RANGE LEVELS -->
                   <p style="font-size:11px; color:#6b7280; margin:16px 0 4px 0;"><strong>{range_heading}</strong></p>
@@ -362,7 +362,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                       </tr>
                     </tbody>
                   </table>
-                  # <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">{range_comment}</p>
+                  <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">{range_comment}</p>
 
                 </td>
               </tr>
@@ -383,12 +383,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                   <p style="font-size:14px; line-height:1.6; margin:0 0 10px 0;">
                     {global_para1}
                   </p>
-                  # <p style="font-size:14px; line-height:1.6; margin:0 0 10px 0;">
-                  #   {global_para2}
-                  # </p>
-                  # <p style="font-size:11px; color:#6b7280; margin:0;">
-                  #   {global_source}
-                  # </p>
+                  <p style="font-size:14px; line-height:1.6; margin:0 0 10px 0;">
+                    {global_para2}
+                  </p>
+                  <p style="font-size:11px; color:#6b7280; margin:0;">
+                    {global_source}
+                  </p>
                 </td>
               </tr>
             </table>
@@ -414,13 +414,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         <th align="left" style="padding:8px 6px; background:#eff6ff; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:#111827;">Interpretation</th>
                       </tr>
                     </thead>
-                    # <tbody>
-                    #   {stocks_rows_html}
-                    # </tbody>
+                    <tbody>
+                      {stocks_rows_html}
+                    </tbody>
                   </table>
-                  # <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">
-                  #   {stocks_source}
-                  # </p>
+                  <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">
+                    {stocks_source}
+                  </p>
                 </td>
               </tr>
             </table>
@@ -478,7 +478,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 </body>
 </html>
-
 """
 
 # ---------- Core generator using Excel ----------
@@ -488,37 +487,35 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     ws = wb["Sheet1"]
 
     # ----- MARKET SNAPSHOT -----
+    raw_gift_value    = cell(ws, "A6")
+    raw_gift_change   = cell(ws, "A7")
+    raw_nifty_value   = cell(ws, "B6")
+    raw_nifty_change  = cell(ws, "B7")
+    raw_sensex_value  = cell(ws, "C6")
+    raw_sensex_change = cell(ws, "C7")
 
-    raw_gift_value   = cell("D9")
-    raw_gift_change  = cell("D10")
-    raw_nifty_value  = cell("G9")
-    raw_nifty_change = cell("G10")
-    raw_sensex_value = cell("J9")
-    raw_sensex_change= cell("J10")
+    raw_bank_value    = cell(ws, "A9")
+    raw_bank_change   = cell(ws, "A10")
+    raw_vix_value     = cell(ws, "B9")
+    raw_vix_change    = cell(ws, "B10")
+    raw_usdinr_value  = cell(ws, "C9")
+    raw_usdinr_change = cell(ws, "C10")
 
-    raw_bank_value   = cell("D13")
-    raw_bank_change  = cell("D14")
-    raw_vix_value    = cell("G13")
-    raw_vix_change   = cell("G14")
-    raw_usdinr_value = cell("J13")
-    raw_usdinr_change= cell("J14")
+    gift_value    = fmt_number(raw_gift_value, 1)
+    gift_change   = fmt_percent(raw_gift_change, 2)
+    nifty_value   = fmt_number(raw_nifty_value, 2)
+    nifty_change  = fmt_percent(raw_nifty_change, 2)
+    sensex_value  = fmt_number(raw_sensex_value, 2)
+    sensex_change = fmt_percent(raw_sensex_change, 2)
 
+    bank_value    = fmt_number(raw_bank_value, 2)
+    bank_change   = fmt_percent(raw_bank_change, 2)
+    vix_value     = fmt_number(raw_vix_value, 2)
+    vix_change    = fmt_percent(raw_vix_change, 2)
+    usdinr_value  = fmt_number(raw_usdinr_value, 4)
+    usdinr_change = fmt_percent(raw_usdinr_change, 2)
 
-    gift_value   = fmt_number(raw_gift_value, 1)
-    gift_change  = fmt_percent(raw_gift_change, 2)
-    nifty_value  = fmt_number(raw_nifty_value, 2)
-    nifty_change = fmt_percent(raw_nifty_change, 2)
-    sensex_value = fmt_number(raw_sensex_value, 2)
-    sensex_change= fmt_percent(raw_sensex_change, 2)
-
-    bank_value   = fmt_number(raw_bank_value, 2)
-    bank_change  = fmt_percent(raw_bank_change, 2)
-    vix_value    = fmt_number(raw_vix_value, 2)
-    vix_change   = fmt_percent(raw_vix_change, 2)
-    usdinr_value = fmt_number(raw_usdinr_value, 4)
-    usdinr_change= fmt_percent(raw_usdinr_change, 2)
-
-    # ----- FII/DII + RANGE -----
+    # ----- FII/DII -----
     playbook_heading = cell(ws, "A19")
     flows_heading    = cell(ws, "A20")
     flows_subtext    = cell(ws, "A22")
@@ -526,7 +523,6 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     raw_fii_prev = cell(ws, "B24")
     raw_fii_mtd  = cell(ws, "C24")
     raw_fii_ytd  = cell(ws, "D24")
-
     raw_dii_prev = cell(ws, "B25")
     raw_dii_mtd  = cell(ws, "C25")
     raw_dii_ytd  = cell(ws, "D25")
@@ -534,27 +530,14 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     fii_prev = fmt_number(raw_fii_prev, 0)
     fii_mtd  = fmt_number(raw_fii_mtd, 2)
     fii_ytd  = fmt_number(raw_fii_ytd, 2)
-
     dii_prev = fmt_number(raw_dii_prev, 0)
     dii_mtd  = fmt_number(raw_dii_mtd, 2)
     dii_ytd  = fmt_number(raw_dii_ytd, 2)
 
     flows_source = cell(ws, "A26")
 
-    # ----- F&O points -----
-    nifty_points_html = ""
-    for row in range(45, 48):
-        txt = cell(ws, f"A{row}")
-        if txt:
-            nifty_points_html += f"<li>{txt}</li>"
-
-    bank_nifty_points_html = ""
-    for row in range(51, 54):
-        txt = cell(ws, f"A{row}")
-        if txt:
-            bank_nifty_points_html += f"<li>{txt}</li>"        
-
     # ----- STOCKS IN FOCUS -----
+    # New HTML: columns are Symbol | Price% | OI% | Interpretation (no Bucket column)
     stocks_rows_html = ""
     for r in range(73, 89):
         bucket = cell(ws, f"A{r}")
@@ -566,34 +549,17 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
         if not (bucket or stock or raw_price or raw_oi or interp):
             break
 
-        price = fmt_percent(raw_price, 2, show_sign=False)
-        oi    = fmt_percent(raw_oi, 2, show_sign=False)
+        # Use stock as Symbol (combining bucket+stock if needed), drop Bucket column
+        symbol = stock if stock else bucket
+        price  = fmt_percent(raw_price, 2, show_sign=False)
+        oi     = fmt_percent(raw_oi, 2, show_sign=False)
 
         stocks_rows_html += f"""
       <tr>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{bucket}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{stock}</td>
+        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{symbol}</td>
         <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{price}</td>
         <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{oi}</td>
         <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{interp}</td>
-      </tr>"""
-
-    # ----- KEY EVENTS -----
-    events_rows_html = ""
-    for r in range(94, 111):
-        raw_date  = ws[f"A{r}"].value
-        ev_date   = fmt_date(raw_date)
-        ev_country = cell(ws, f"B{r}")
-        ev_event   = cell(ws, f"C{r}")
-
-        if not (ev_date or ev_country or ev_event):
-            break
-
-        events_rows_html += f"""
-      <tr>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{ev_date}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{ev_country}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{ev_event}</td>
       </tr>"""
 
     # ----- CORPORATE HIGHLIGHTS -----
@@ -609,148 +575,103 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
         <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{update}</td>
       </tr>"""
 
-    # ----- CONTEXT (same as earlier script) -----
+    # ----- BUILD CONTEXT -----
     context = {
-        # top level
-    # "title":            cell("A3"),
-    "date_line":        cell("D2"),
-    "main_heading":     cell("D3"),
+        "title":            cell(ws, "A3"),
+        "date_line":        cell(ws, "A2"),
+        "main_heading":     cell(ws, "A3"),
 
-    # market snapshot – labels
-    "market_snapshot_heading": cell("D6"),
-    "gift_label":       cell("G8"),
-    "nifty_label":      cell("B5"),
-    "sensex_label":     cell("J8"),
-    "bank_label":       cell("D12"),
-    "vix_label":        cell("G12"),
-    "usdinr_label":     cell("J12"),
+        "market_snapshot_heading": cell(ws, "A4"),
+        "gift_label":       cell(ws, "A5"),
+        "nifty_label":      cell(ws, "B5"),
+        "sensex_label":     cell(ws, "C5"),
+        "bank_label":       cell(ws, "A8"),
+        "vix_label":        cell(ws, "B8"),
+        "usdinr_label":     cell(ws, "C8"),
 
-    # market snapshot 
-    "gift_value":   gift_value,
-    "gift_change":  gift_change,
-    "gift_color":   perc_color(gift_change),
+        "gift_value":    gift_value,
+        "gift_change":   gift_change,
+        "gift_color":    perc_color(gift_change),
 
-    "nifty_value":  nifty_value,
-    "nifty_change": nifty_change,
-    "nifty_color":  perc_color(nifty_change),
+        "nifty_value":   nifty_value,
+        "nifty_change":  nifty_change,
+        "nifty_color":   perc_color(nifty_change),
 
-    "sensex_value": sensex_value,
-    "sensex_change":sensex_change,
-    "sensex_color": perc_color(sensex_change),
+        "sensex_value":  sensex_value,
+        "sensex_change": sensex_change,
+        "sensex_color":  perc_color(sensex_change),
 
-    "bank_value":   bank_value,
-    "bank_change":  bank_change,
-    "bank_color":   perc_color(bank_change),
+        "bank_value":    bank_value,
+        "bank_change":   bank_change,
+        "bank_color":    perc_color(bank_change),
 
-    "vix_value":    vix_value,
-    "vix_change":   vix_change,
-    "vix_color":    perc_color(vix_change),
+        "vix_value":     vix_value,
+        "vix_change":    vix_change,
+        "vix_color":     perc_color(vix_change),
 
-    "usdinr_value": usdinr_value,
-    "usdinr_change":usdinr_change,
-    "usdinr_color": perc_color(usdinr_change),
+        "usdinr_value":  usdinr_value,
+        "usdinr_change": usdinr_change,
+        "usdinr_color":  perc_color(usdinr_change),
 
-    # podcast section
-    "podcast_tagline":       cell("D18"),
-    "podcast_para1":         cell("D19"),
-    # "podcast_para2":         cell("D8"),
-    "podcast_link":          cell("D22"),
-    # "podcast_button_label":  cell("B17"),
-    
+        # Podcast — para2 removed (not in new HTML)
+        "podcast_tagline": cell(ws, "D5"),
+        "podcast_para1":   cell(ws, "D6"),
+        "podcast_link":    cell(ws, "B16"),
+        "podcast_footer":  cell(ws, "D11"),
 
-    # recap section
-    "recap_heading":   cell("D24"),
-    "recap_para1":     cell("D25"),
-    # "recap_para2":     cell("A15"),
-    # "recap_para3":     cell("A16"),
-    "recap_source":    cell("A17"),
+        "recap_heading": cell(ws, "A13"),
+        "recap_para1":   cell(ws, "A14"),
+        "recap_para2":   cell(ws, "A15"),
+        "recap_para3":   cell(ws, "A16"),
+        "recap_source":  cell(ws, "A17"),
 
-    # trading playbook / flows
-    "playbook_heading": playbook_heading,
-    "flows_heading":    flows_heading,
-    "flows_subtext":    flows_subtext,
+        "playbook_heading": playbook_heading,
+        "flows_heading":    flows_heading,
+        "flows_subtext":    flows_subtext,
 
-   "fii_prev":        fii_prev,
-    "fii_prev_color":  perc_color(fii_prev),
-    "fii_mtd":         fii_mtd,
-    "fii_mtd_color":   perc_color(fii_mtd),
-    "fii_ytd":         fii_ytd,
-    "fii_ytd_color":   perc_color(fii_ytd),
+        "fii_prev":       fii_prev,
+        "fii_prev_color": perc_color(fii_prev),
+        "fii_mtd":        fii_mtd,
+        "fii_mtd_color":  perc_color(fii_mtd),
+        "fii_ytd":        fii_ytd,
+        "fii_ytd_color":  perc_color(fii_ytd),
 
-    "dii_prev":        dii_prev,
-    "dii_prev_color":  perc_color(dii_prev),
-    "dii_mtd":         dii_mtd,
-    "dii_mtd_color":   perc_color(dii_mtd),
-    "dii_ytd":         dii_ytd,
-    "dii_ytd_color":   perc_color(dii_ytd),
-    "flows_source":    flows_source,
+        "dii_prev":       dii_prev,
+        "dii_prev_color": perc_color(dii_prev),
+        "dii_mtd":        dii_mtd,
+        "dii_mtd_color":  perc_color(dii_mtd),
+        "dii_ytd":        dii_ytd,
+        "dii_ytd_color":  perc_color(dii_ytd),
+        "flows_source":   flows_source,
 
-    # range table
-    "range_heading":   cell("D36"),
-    "range_row1_index": cell("D38"),
-    "range_row1_s1":    fmt_number(cell("E38"), 0),
-    "range_row1_s2":    fmt_number(cell("G38"), 0),
-    "range_row1_r1":    fmt_number(cell("I38"), 0),
-    "range_row1_r2":    fmt_number(cell("K38"), 0),
+        "range_heading":    cell(ws, "A27"),
+        "range_row1_index": cell(ws, "A30"),
+        "range_row1_s1":    fmt_number(cell(ws, "B30"), 0),
+        "range_row1_s2":    fmt_number(cell(ws, "C30"), 0),
+        "range_row1_r1":    fmt_number(cell(ws, "D30"), 0),
+        "range_row1_r2":    fmt_number(cell(ws, "E30"), 0),
+        "range_row2_index": cell(ws, "A31"),
+        "range_row2_s1":    fmt_number(cell(ws, "B31"), 0),
+        "range_row2_s2":    fmt_number(cell(ws, "C31"), 0),
+        "range_row2_r1":    fmt_number(cell(ws, "D31"), 0),
+        "range_row2_r2":    fmt_number(cell(ws, "E31"), 0),
+        "range_comment":    cell(ws, "A32"),
 
-    "range_row2_index": cell("A31"),
-    "range_row2_s1":    fmt_number(cell("E39"), 0),
-    "range_row2_s2":    fmt_number(cell("G39"), 0),
-    "range_row2_r1":    fmt_number(cell("I39"), 0),
-    "range_row2_r2":    fmt_number(cell("K39"), 0),
+        # Global — para2 added (new in HTML)
+        "global_heading": cell(ws, "A59"),
+        "global_para1":   cell(ws, "A61"),
+        "global_para2":   cell(ws, "A62"),   # <-- new: read A62 for global_para2
+        "global_source":  cell(ws, "A63"),
 
-    # "range_comment":   cell("A32"),
+        "stocks_heading":   cell(ws, "A71"),
+        "stocks_rows_html": stocks_rows_html,
+        "stocks_source":    cell(ws, "A90"),
 
-    # outlook
-    "outlook_heading": cell("A35"),
-    "outlook_para1":   cell("A37"),
-    "outlook_para2":   cell("A39"),
-    "outlook_para3":   cell("A41"),
+        "corp_heading":   cell(ws, "A103"),
+        "corp_rows_html": corp_rows_html,
+        "corp_source":    cell(ws, "A116"),
 
-    # F&O
-    "fo_heading":          cell("A43"),
-    "nifty_option_heading": cell("A44"),
-    
-
-    "nifty_option_points" : nifty_points_html,
-    "bank_option_heading":  cell("A50"),
-    "bank_option_points":   nifty_points_html,
-    "fo_source":            cell("A56"),
-    "fo_ban_stocks":        cell("A57"),
-
-    # global market
-    "global_heading": cell("D41"),
-    "global_para1":   cell("D42"),
-    # "global_source":  cell("A63"),
-
-    # sector
-    "sector_heading": cell("A65"),
-    "sector_leaders": cell("A67"),
-    "sector_laggards":cell("E67"),
-    "sector_source":  cell("A69"),
-
-    # stocks in focus 
-    "stocks_heading":   cell("D47"),
-    "stocks_rows_html": stocks_rows_html,
-    # "stocks_source":    cell("A90"),
-
-    # key events
-    "events_heading":   cell("A92"),
-    "events_rows_html": events_rows_html,
-    "events_source":    cell("A101"),
-
-    # corporate highlights
-    "corp_heading":   cell("D54"),
-     "corp_rows_html": corp_rows_html,
-    # "corp_source":    cell("A116"),
-
-    # disclaimer block
-    "note_text":           cell("A118"),
-    "disclaimer_main":     cell("B76"),
-    "disclaimer_reg":      cell("B77"),
-    "compliance_contact":  cell("B78"),
-    "support_contact":     cell("B79"),
-    "disclaimer_link_text":cell("B80"),
+        "note_text": cell(ws, "A118"),
     }
 
     wb.close()
