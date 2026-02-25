@@ -487,19 +487,20 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     ws = wb["Sheet1"]
 
     # ----- MARKET SNAPSHOT -----
-    raw_gift_value    = cell(ws, "A6")
-    raw_gift_change   = cell(ws, "A7")
-    raw_nifty_value   = cell(ws, "B6")
-    raw_nifty_change  = cell(ws, "B7")
-    raw_sensex_value  = cell(ws, "C6")
-    raw_sensex_change = cell(ws, "C7")
+    raw_gift_value   = cell("D9")
+    raw_gift_change  = cell("D10")
+    raw_nifty_value  = cell("G9")
+    raw_nifty_change = cell("G10")
+    raw_sensex_value = cell("J9")
+    raw_sensex_change= cell("J10")
 
-    raw_bank_value    = cell(ws, "A9")
-    raw_bank_change   = cell(ws, "A10")
-    raw_vix_value     = cell(ws, "B9")
-    raw_vix_change    = cell(ws, "B10")
-    raw_usdinr_value  = cell(ws, "C9")
-    raw_usdinr_change = cell(ws, "C10")
+    raw_bank_value   = cell("D13")
+    raw_bank_change  = cell("D14")
+    raw_vix_value    = cell("G13")
+    raw_vix_change   = cell("G14")
+    raw_usdinr_value = cell("J13")
+    raw_usdinr_change= cell("J14")
+
 
     gift_value    = fmt_number(raw_gift_value, 1)
     gift_change   = fmt_percent(raw_gift_change, 2)
@@ -516,16 +517,18 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     usdinr_change = fmt_percent(raw_usdinr_change, 2)
 
     # ----- FII/DII -----
-    playbook_heading = cell(ws, "A19")
-    flows_heading    = cell(ws, "A20")
-    flows_subtext    = cell(ws, "A22")
+    playbook_heading = cell("D30")
+    flows_heading    = cell("D31")
+    
 
-    raw_fii_prev = cell(ws, "B24")
-    raw_fii_mtd  = cell(ws, "C24")
-    raw_fii_ytd  = cell(ws, "D24")
-    raw_dii_prev = cell(ws, "B25")
-    raw_dii_mtd  = cell(ws, "C25")
-    raw_dii_ytd  = cell(ws, "D25")
+    # RAW values from cells
+    raw_fii_prev = cell("F33")
+    raw_fii_mtd  = cell("H33")
+    raw_fii_ytd  = cell("J33")
+
+    raw_dii_prev = cell("F34")
+    raw_dii_mtd  = cell("H34")
+    raw_dii_ytd  = cell("J34")
 
     fii_prev = fmt_number(raw_fii_prev, 0)
     fii_mtd  = fmt_number(raw_fii_mtd, 2)
@@ -534,23 +537,22 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     dii_mtd  = fmt_number(raw_dii_mtd, 2)
     dii_ytd  = fmt_number(raw_dii_ytd, 2)
 
-    flows_source = cell(ws, "A26")
+   
 
     # ----- STOCKS IN FOCUS -----
     # New HTML: columns are Symbol | Price% | OI% | Interpretation (no Bucket column)
     stocks_rows_html = ""
-    for r in range(73, 89):
-        bucket = cell(ws, f"A{r}")
-        stock  = cell(ws, f"B{r}")
-        raw_price = cell(ws, f"C{r}")
-        raw_oi    = cell(ws, f"D{r}")
-        interp    = cell(ws, f"E{r}")
+    for r in range(49, 52):
+       symbol  = cell(f"D{r}")
+       raw_price = cell(f"F{r}")
+       raw_oi    = cell(f"H{r}")
+       interp    = cell(f"J{r}")
 
-        if not (bucket or stock or raw_price or raw_oi or interp):
+        if not (symbol or stock or raw_price or raw_oi or interp):
             break
 
-        # Use stock as Symbol (combining bucket+stock if needed), drop Bucket column
-        symbol = stock if stock else bucket
+       
+        symbol = stock if stock else symbol
         price  = fmt_percent(raw_price, 2, show_sign=False)
         oi     = fmt_percent(raw_oi, 2, show_sign=False)
 
@@ -564,9 +566,9 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
 
     # ----- CORPORATE HIGHLIGHTS -----
     corp_rows_html = ""
-    for r in range(105, 115):
-        company = cell(ws, f"A{r}")
-        update  = cell(ws, f"B{r}")
+    for r in range(56, 60):
+        company = cell(f"D{r}")
+        update  = cell(f"{r}")
         if not (company or update):
             break
         corp_rows_html += f"""
@@ -577,101 +579,117 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
 
     # ----- BUILD CONTEXT -----
     context = {
-        "title":            cell(ws, "A3"),
-        "date_line":        cell(ws, "A2"),
-        "main_heading":     cell(ws, "A3"),
+        # top level
+        # "title":            cell("A3"),
+        "date_line":        cell("D2"),
+        "main_heading":     cell("D3"),
 
-        "market_snapshot_heading": cell(ws, "A4"),
-        "gift_label":       cell(ws, "A5"),
-        "nifty_label":      cell(ws, "B5"),
-        "sensex_label":     cell(ws, "C5"),
-        "bank_label":       cell(ws, "A8"),
-        "vix_label":        cell(ws, "B8"),
-        "usdinr_label":     cell(ws, "C8"),
+        # market snapshot – labels
+        "market_snapshot_heading": cell("D6"),
+        "gift_label":       cell("G8"),
+        "nifty_label":      cell("B5"),
+        "sensex_label":     cell("J8"),
+        "bank_label":       cell("D12"),
+        "vix_label":        cell("G12"),
+        "usdinr_label":     cell("J12"),
 
-        "gift_value":    gift_value,
-        "gift_change":   gift_change,
-        "gift_color":    perc_color(gift_change),
+        # market snapshot 
+        "gift_value":   gift_value,
+        "gift_change":  gift_change,
+        "gift_color":   perc_color(gift_change),
 
-        "nifty_value":   nifty_value,
-        "nifty_change":  nifty_change,
-        "nifty_color":   perc_color(nifty_change),
+        "nifty_value":  nifty_value,
+        "nifty_change": nifty_change,
+        "nifty_color":  perc_color(nifty_change),
 
-        "sensex_value":  sensex_value,
-        "sensex_change": sensex_change,
-        "sensex_color":  perc_color(sensex_change),
+        "sensex_value": sensex_value,
+        "sensex_change":sensex_change,
+        "sensex_color": perc_color(sensex_change),
 
-        "bank_value":    bank_value,
-        "bank_change":   bank_change,
-        "bank_color":    perc_color(bank_change),
+        "bank_value":   bank_value,
+        "bank_change":  bank_change,
+        "bank_color":   perc_color(bank_change),
 
-        "vix_value":     vix_value,
-        "vix_change":    vix_change,
-        "vix_color":     perc_color(vix_change),
+        "vix_value":    vix_value,
+        "vix_change":   vix_change,
+        "vix_color":    perc_color(vix_change),
 
-        "usdinr_value":  usdinr_value,
-        "usdinr_change": usdinr_change,
-        "usdinr_color":  perc_color(usdinr_change),
+        "usdinr_value": usdinr_value,
+        "usdinr_change":usdinr_change,
+        "usdinr_color": perc_color(usdinr_change),
 
-        # Podcast — para2 removed (not in new HTML)
-        "podcast_tagline": cell(ws, "D5"),
-        "podcast_para1":   cell(ws, "D6"),
-        "podcast_link":    cell(ws, "B16"),
-        "podcast_footer":  cell(ws, "D11"),
+        # podcast section
+        "podcast_tagline":       cell("D18"),
+        "podcast_para1":         cell("D19"),
+        # "podcast_para2":         cell("D8"),
+        "podcast_link":          cell("D22"),
+        # "podcast_button_label":  cell("B17"),
+        
 
-        "recap_heading": cell(ws, "A13"),
-        "recap_para1":   cell(ws, "A14"),
-        "recap_para2":   cell(ws, "A15"),
-        "recap_para3":   cell(ws, "A16"),
-        "recap_source":  cell(ws, "A17"),
+        # recap section
+        "recap_heading":   cell("D24"),
+        "recap_para1":     cell("D25"),
+        # "recap_para2":     cell("A15"),
+        # "recap_para3":     cell("A16"),
+        "recap_source":    cell("A17"),
 
+        # trading playbook / flows
         "playbook_heading": playbook_heading,
         "flows_heading":    flows_heading,
         "flows_subtext":    flows_subtext,
 
-        "fii_prev":       fii_prev,
-        "fii_prev_color": perc_color(fii_prev),
-        "fii_mtd":        fii_mtd,
-        "fii_mtd_color":  perc_color(fii_mtd),
-        "fii_ytd":        fii_ytd,
-        "fii_ytd_color":  perc_color(fii_ytd),
+      "fii_prev":        fii_prev,
+        "fii_prev_color":  perc_color(fii_prev),
+        "fii_mtd":         fii_mtd,
+        "fii_mtd_color":   perc_color(fii_mtd),
+        "fii_ytd":         fii_ytd,
+        "fii_ytd_color":   perc_color(fii_ytd),
 
-        "dii_prev":       dii_prev,
-        "dii_prev_color": perc_color(dii_prev),
-        "dii_mtd":        dii_mtd,
-        "dii_mtd_color":  perc_color(dii_mtd),
-        "dii_ytd":        dii_ytd,
-        "dii_ytd_color":  perc_color(dii_ytd),
-        "flows_source":   flows_source,
+        "dii_prev":        dii_prev,
+        "dii_prev_color":  perc_color(dii_prev),
+        "dii_mtd":         dii_mtd,
+        "dii_mtd_color":   perc_color(dii_mtd),
+        "dii_ytd":         dii_ytd,
+        "dii_ytd_color":   perc_color(dii_ytd),
+        "flows_source":    flows_source,
 
-        "range_heading":    cell(ws, "A27"),
-        "range_row1_index": cell(ws, "A30"),
-        "range_row1_s1":    fmt_number(cell(ws, "B30"), 0),
-        "range_row1_s2":    fmt_number(cell(ws, "C30"), 0),
-        "range_row1_r1":    fmt_number(cell(ws, "D30"), 0),
-        "range_row1_r2":    fmt_number(cell(ws, "E30"), 0),
-        "range_row2_index": cell(ws, "A31"),
-        "range_row2_s1":    fmt_number(cell(ws, "B31"), 0),
-        "range_row2_s2":    fmt_number(cell(ws, "C31"), 0),
-        "range_row2_r1":    fmt_number(cell(ws, "D31"), 0),
-        "range_row2_r2":    fmt_number(cell(ws, "E31"), 0),
-        "range_comment":    cell(ws, "A32"),
+        # range table
+        "range_heading":   cell("D36"),
+        "range_row1_index": cell("D38"),
+        "range_row1_s1":    fmt_number(cell("E38"), 0),
+        "range_row1_s2":    fmt_number(cell("G38"), 0),
+        "range_row1_r1":    fmt_number(cell("I38"), 0),
+        "range_row1_r2":    fmt_number(cell("K38"), 0),
 
-        # Global — para2 added (new in HTML)
-        "global_heading": cell(ws, "A59"),
-        "global_para1":   cell(ws, "A61"),
-        "global_para2":   cell(ws, "A62"),   # <-- new: read A62 for global_para2
-        "global_source":  cell(ws, "A63"),
+        "range_row2_index": cell("A31"),
+        "range_row2_s1":    fmt_number(cell("E39"), 0),
+        "range_row2_s2":    fmt_number(cell("G39"), 0),
+        "range_row2_r1":    fmt_number(cell("I39"), 0),
+        "range_row2_r2":    fmt_number(cell("K39"), 0),
 
-        "stocks_heading":   cell(ws, "A71"),
+        # "range_comment":   cell("A32"),
+
+       
+
+        # global market
+        "global_heading": cell("D41"),
+        "global_para1":   cell("D42"),
+        # "global_source":  cell("A63"),
+
+        # stocks in focus 
+        "stocks_heading":   cell("D47"),
         "stocks_rows_html": stocks_rows_html,
-        "stocks_source":    cell(ws, "A90"),
+        # "stocks_source":    cell("A90"),
 
-        "corp_heading":   cell(ws, "A103"),
+        # key events
+        "events_heading":   cell("A92"),
+        "events_rows_html": events_rows_html,
+        "events_source":    cell("A101"),
+
+        # corporate highlights
+        "corp_heading":   cell("D54"),
         "corp_rows_html": corp_rows_html,
-        "corp_source":    cell(ws, "A116"),
-
-        "note_text": cell(ws, "A118"),
+        
     }
 
     wb.close()
