@@ -26,11 +26,11 @@ app.add_middleware(
 
 # ---------- Helper functions ----------
 
-def cell(addr):
-    return (ws[addr].value or "").strip() if isinstance(ws[addr].value, str) else (ws[addr].value or "")
+def cell(ws, addr):
+    v = ws[addr].value
+    return v.strip() if isinstance(v, str) else (v or "")
 
 def fmt_number(value, decimals=2):
-    
     if value is None or value == "":
         return ""
     try:
@@ -41,17 +41,14 @@ def fmt_number(value, decimals=2):
         return str(value)
 
 def fmt_percent(value, decimals=2, show_sign=True):
-    
     if value is None or value == "":
         return ""
     s = str(value).strip()
     try:
-       
         if s.endswith("%"):
             num = float(s.replace("%", "").replace(",", ""))
         else:
             num = float(s.replace(",", ""))
-            
             if abs(num) < 1:
                 num = num * 100
         sign = "+" if show_sign and num > 0 else ""
@@ -59,7 +56,6 @@ def fmt_percent(value, decimals=2, show_sign=True):
         return f"{sign}{fmt.format(num)}%"
     except ValueError:
         return s
-
 
 def perc_color(value_str):
     s = str(value_str).strip()
@@ -69,104 +65,6 @@ def perc_color(value_str):
         return "#b91c1c"
     return "#15803d"
 
-
-# RAW values from Excel
-raw_gift_value   = cell("D9")
-raw_gift_change  = cell("D10")
-raw_nifty_value  = cell("G9")
-raw_nifty_change = cell("G10")
-raw_sensex_value = cell("J9")
-raw_sensex_change= cell("J10")
-
-raw_bank_value   = cell("D13")
-raw_bank_change  = cell("D14")
-raw_vix_value    = cell("G13")
-raw_vix_change   = cell("G14")
-raw_usdinr_value = cell("J13")
-raw_usdinr_change= cell("J14")
-
-
-gift_value   = fmt_number(raw_gift_value, 1)
-gift_change  = fmt_percent(raw_gift_change, 2)
-nifty_value  = fmt_number(raw_nifty_value, 2)
-nifty_change = fmt_percent(raw_nifty_change, 2)
-sensex_value = fmt_number(raw_sensex_value, 2)
-sensex_change= fmt_percent(raw_sensex_change, 2)
-
-bank_value   = fmt_number(raw_bank_value, 2)
-bank_change  = fmt_percent(raw_bank_change, 2)
-vix_value    = fmt_number(raw_vix_value, 2)
-vix_change   = fmt_percent(raw_vix_change, 2)
-usdinr_value = fmt_number(raw_usdinr_value, 4)
-usdinr_change= fmt_percent(raw_usdinr_change, 2)
-
-def perc_color(value_str):
-    s = str(value_str).strip()
-    if not s:
-        return "#111827"   # neutral
-    if s.startswith("-"):
-        return "#b91c1c"   # red
-    return "#15803d"       # green
-
-playbook_heading = cell("D30")
-flows_heading    = cell("D31")
-# flows_subtext    = cell("A22")
-
-# RAW values from cells
-raw_fii_prev = cell("F33")
-raw_fii_mtd  = cell("H33")
-raw_fii_ytd  = cell("J33")
-
-raw_dii_prev = cell("F34")
-raw_dii_mtd  = cell("H34")
-raw_dii_ytd  = cell("J34")
-
-# FORMATTED numbers with comma (₹ Cr)
-fii_prev = fmt_number(raw_fii_prev, 0)   
-fii_mtd  = fmt_number(raw_fii_mtd, 2)   
-fii_ytd  = fmt_number(raw_fii_ytd, 2)    
-
-dii_prev = fmt_number(raw_dii_prev, 0)  
-dii_mtd  = fmt_number(raw_dii_mtd, 2)   
-dii_ytd  = fmt_number(raw_dii_ytd, 2)    
-
-flows_source = cell("A26")
-
-
-
-nifty_points_html = ""
-for row in range(45, 48):   
-    txt = cell(f"A{row}")
-    if txt:
-        nifty_points_html += f"<li>{txt}</li>"
-
-
-stocks_rows_html = ""
-start_row = 49
-end_row   = 52
-
-for r in range(start_row, end_row + 1):
-    
-    symbol  = cell(f"D{r}")
-    raw_price = cell(f"F{r}")
-    raw_oi    = cell(f"H{r}")
-    interp    = cell(f"J{r}")
-
-    if not (bucket or stock or raw_price or raw_oi or interp):
-        break
-
-    price = fmt_percent(raw_price, 2, show_sign=False)  
-    oi    = fmt_percent(raw_oi, 2, show_sign=False)     
-
-    stocks_rows_html += f"""
-      <tr>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{symbol}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{price}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{oi}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{interp}</td>
-      </tr>"""
-
-    
 def fmt_date(v):
     if isinstance(v, datetime):
         return v.strftime("%d %b %Y")
@@ -181,47 +79,6 @@ def fmt_date(v):
                 continue
         return v
     return ""
-
-events_rows_html = ""
-start_row = 94     
-end_row   = 110     
-
-
-for r in range(start_row, end_row + 1):
-    raw_date  = ws[f"A{r}"].value 
-    ev_date   = fmt_date(raw_date)
-    ev_country = cell(f"B{r}")
-    ev_event   = cell(f"C{r}")
-
-    if not (ev_date or ev_country or ev_event):
-        break
-
-    events_rows_html += f"""
-      <tr>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{ev_date}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{ev_country}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{ev_event}</td>
-      </tr>"""
-    
-    # --- Corporate Highlights table ---
-
-corp_rows_html = ""
-start_row = 56     
-end_row   = 60
-
-for r in range(start_row, end_row + 1):
-    company = cell(f"D{r}")
-    update  = cell(f"G{r}")
-
-    
-    if not (company or update):
-        break
-
-    corp_rows_html += f"""
-      <tr>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;"><strong>{company}</strong></td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{update}</td>
-      </tr>"""
 
 # ---------- HTML template (unchanged, trimmed here for brevity) ----------
 
@@ -631,19 +488,21 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     ws = wb["Sheet1"]
 
     # ----- MARKET SNAPSHOT -----
-    raw_gift_value   = cell(ws, "A6")
-    raw_gift_change  = cell(ws, "A7")
-    raw_nifty_value  = cell(ws, "B6")
-    raw_nifty_change = cell(ws, "B7")
-    raw_sensex_value = cell(ws, "C6")
-    raw_sensex_change= cell(ws, "C7")
+# RAW values from Excel
+raw_gift_value   = cell("D9")
+raw_gift_change  = cell("D10")
+raw_nifty_value  = cell("G9")
+raw_nifty_change = cell("G10")
+raw_sensex_value = cell("J9")
+raw_sensex_change= cell("J10")
 
-    raw_bank_value   = cell(ws, "A9")
-    raw_bank_change  = cell(ws, "A10")
-    raw_vix_value    = cell(ws, "B9")
-    raw_vix_change   = cell(ws, "B10")
-    raw_usdinr_value = cell(ws, "C9")
-    raw_usdinr_change= cell(ws, "C10")
+raw_bank_value   = cell("D13")
+raw_bank_change  = cell("D14")
+raw_vix_value    = cell("G13")
+raw_vix_change   = cell("G14")
+raw_usdinr_value = cell("J13")
+raw_usdinr_change= cell("J14")
+
 
     gift_value   = fmt_number(raw_gift_value, 1)
     gift_change  = fmt_percent(raw_gift_change, 2)
@@ -752,7 +611,7 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
 
     # ----- CONTEXT (same as earlier script) -----
     context = {
-    # top level
+        # top level
     # "title":            cell("A3"),
     "date_line":        cell("D2"),
     "main_heading":     cell("D3"),
@@ -892,7 +751,7 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     "compliance_contact":  cell("B78"),
     "support_contact":     cell("B79"),
     "disclaimer_link_text":cell("B80"),
-}
+    }
 
     wb.close()
     return HTML_TEMPLATE.format(**context)
