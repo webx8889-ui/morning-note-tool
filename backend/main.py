@@ -488,20 +488,20 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     ws = wb["Sheet1"]
 
     # ----- MARKET SNAPSHOT -----
-# RAW values from Excel
-raw_gift_value   = cell("D9")
-raw_gift_change  = cell("D10")
-raw_nifty_value  = cell("G9")
-raw_nifty_change = cell("G10")
-raw_sensex_value = cell("J9")
-raw_sensex_change= cell("J10")
 
-raw_bank_value   = cell("D13")
-raw_bank_change  = cell("D14")
-raw_vix_value    = cell("G13")
-raw_vix_change   = cell("G14")
-raw_usdinr_value = cell("J13")
-raw_usdinr_change= cell("J14")
+    raw_gift_value   = cell("D9")
+    raw_gift_change  = cell("D10")
+    raw_nifty_value  = cell("G9")
+    raw_nifty_change = cell("G10")
+    raw_sensex_value = cell("J9")
+    raw_sensex_change= cell("J10")
+
+    raw_bank_value   = cell("D13")
+    raw_bank_change  = cell("D14")
+    raw_vix_value    = cell("G13")
+    raw_vix_change   = cell("G14")
+    raw_usdinr_value = cell("J13")
+    raw_usdinr_change= cell("J14")
 
 
     gift_value   = fmt_number(raw_gift_value, 1)
