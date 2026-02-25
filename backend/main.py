@@ -579,118 +579,129 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
 
     # ----- BUILD CONTEXT -----
     context = {
-        # top level
-        # "title":            cell("A3"),
-        "date_line":        cell("D2"),
-        "main_heading":     cell("D3"),
+    # =======================
+    # Top Level
+    # =======================
+    "date_line": cell("D2"),
+    "main_heading": cell("D3"),
 
-        # market snapshot – labels
-        "market_snapshot_heading": cell("D6"),
-        "gift_label":       cell("G8"),
-        "nifty_label":      cell("B5"),
-        "sensex_label":     cell("J8"),
-        "bank_label":       cell("D12"),
-        "vix_label":        cell("G12"),
-        "usdinr_label":     cell("J12"),
+    # =======================
+    # Market Snapshot – Labels
+    # =======================
+    "market_snapshot_heading": cell("D6"),
+    "gift_label": cell("G8"),
+    "nifty_label": cell("B5"),
+    "sensex_label": cell("J8"),
+    "bank_label": cell("D12"),
+    "vix_label": cell("G12"),
+    "usdinr_label": cell("J12"),
 
-        # market snapshot 
-        "gift_value":   gift_value,
-        "gift_change":  gift_change,
-        "gift_color":   perc_color(gift_change),
+    # =======================
+    # Market Snapshot – Values
+    # =======================
+    "gift_value": gift_value,
+    "gift_change": gift_change,
+    "gift_color": perc_color(gift_change),
 
-        "nifty_value":  nifty_value,
-        "nifty_change": nifty_change,
-        "nifty_color":  perc_color(nifty_change),
+    "nifty_value": nifty_value,
+    "nifty_change": nifty_change,
+    "nifty_color": perc_color(nifty_change),
 
-        "sensex_value": sensex_value,
-        "sensex_change":sensex_change,
-        "sensex_color": perc_color(sensex_change),
+    "sensex_value": sensex_value,
+    "sensex_change": sensex_change,
+    "sensex_color": perc_color(sensex_change),
 
-        "bank_value":   bank_value,
-        "bank_change":  bank_change,
-        "bank_color":   perc_color(bank_change),
+    "bank_value": bank_value,
+    "bank_change": bank_change,
+    "bank_color": perc_color(bank_change),
 
-        "vix_value":    vix_value,
-        "vix_change":   vix_change,
-        "vix_color":    perc_color(vix_change),
+    "vix_value": vix_value,
+    "vix_change": vix_change,
+    "vix_color": perc_color(vix_change),
 
-        "usdinr_value": usdinr_value,
-        "usdinr_change":usdinr_change,
-        "usdinr_color": perc_color(usdinr_change),
+    "usdinr_value": usdinr_value,
+    "usdinr_change": usdinr_change,
+    "usdinr_color": perc_color(usdinr_change),
 
-        # podcast section
-        "podcast_tagline":       cell("D18"),
-        "podcast_para1":         cell("D19"),
-        # "podcast_para2":         cell("D8"),
-        "podcast_link":          cell("D22"),
-        # "podcast_button_label":  cell("B17"),
-        
+    # =======================
+    # Podcast Section
+    # =======================
+    "podcast_tagline": cell("D18"),
+    "podcast_para1": cell("D19"),
+    "podcast_link": cell("D22"),
 
-        # recap section
-        "recap_heading":   cell("D24"),
-        "recap_para1":     cell("D25"),
-        # "recap_para2":     cell("A15"),
-        # "recap_para3":     cell("A16"),
-        "recap_source":    cell("A17"),
+    # =======================
+    # Recap Section
+    # =======================
+    "recap_heading": cell("D24"),
+    "recap_para1": cell("D25"),
+    "recap_source": cell("A17"),
 
-        # trading playbook / flows
-        "playbook_heading": playbook_heading,
-        "flows_heading":    flows_heading,
-        "flows_subtext":    flows_subtext,
+    # =======================
+    # Trading Playbook / Flows
+    # =======================
+    "playbook_heading": playbook_heading,
+    "flows_heading": flows_heading,
+    "flows_subtext": flows_subtext,
 
-      "fii_prev":        fii_prev,
-        "fii_prev_color":  perc_color(fii_prev),
-        "fii_mtd":         fii_mtd,
-        "fii_mtd_color":   perc_color(fii_mtd),
-        "fii_ytd":         fii_ytd,
-        "fii_ytd_color":   perc_color(fii_ytd),
+    "fii_prev": fii_prev,
+    "fii_prev_color": perc_color(fii_prev),
+    "fii_mtd": fii_mtd,
+    "fii_mtd_color": perc_color(fii_mtd),
+    "fii_ytd": fii_ytd,
+    "fii_ytd_color": perc_color(fii_ytd),
 
-        "dii_prev":        dii_prev,
-        "dii_prev_color":  perc_color(dii_prev),
-        "dii_mtd":         dii_mtd,
-        "dii_mtd_color":   perc_color(dii_mtd),
-        "dii_ytd":         dii_ytd,
-        "dii_ytd_color":   perc_color(dii_ytd),
-        "flows_source":    flows_source,
+    "dii_prev": dii_prev,
+    "dii_prev_color": perc_color(dii_prev),
+    "dii_mtd": dii_mtd,
+    "dii_mtd_color": perc_color(dii_mtd),
+    "dii_ytd": dii_ytd,
+    "dii_ytd_color": perc_color(dii_ytd),
 
-        # range table
-        "range_heading":   cell("D36"),
-        "range_row1_index": cell("D38"),
-        "range_row1_s1":    fmt_number(cell("E38"), 0),
-        "range_row1_s2":    fmt_number(cell("G38"), 0),
-        "range_row1_r1":    fmt_number(cell("I38"), 0),
-        "range_row1_r2":    fmt_number(cell("K38"), 0),
+    "flows_source": flows_source,
 
-        "range_row2_index": cell("A31"),
-        "range_row2_s1":    fmt_number(cell("E39"), 0),
-        "range_row2_s2":    fmt_number(cell("G39"), 0),
-        "range_row2_r1":    fmt_number(cell("I39"), 0),
-        "range_row2_r2":    fmt_number(cell("K39"), 0),
+    # =======================
+    # Range Table
+    # =======================
+    "range_heading": cell("D36"),
 
-        # "range_comment":   cell("A32"),
+    "range_row1_index": cell("D38"),
+    "range_row1_s1": fmt_number(cell("E38"), 0),
+    "range_row1_s2": fmt_number(cell("G38"), 0),
+    "range_row1_r1": fmt_number(cell("I38"), 0),
+    "range_row1_r2": fmt_number(cell("K38"), 0),
 
-       
+    "range_row2_index": cell("A31"),
+    "range_row2_s1": fmt_number(cell("E39"), 0),
+    "range_row2_s2": fmt_number(cell("G39"), 0),
+    "range_row2_r1": fmt_number(cell("I39"), 0),
+    "range_row2_r2": fmt_number(cell("K39"), 0),
 
-        # global market
-        "global_heading": cell("D41"),
-        "global_para1":   cell("D42"),
-        # "global_source":  cell("A63"),
+    # =======================
+    # Global Market
+    # =======================
+    "global_heading": cell("D41"),
+    "global_para1": cell("D42"),
 
-        # stocks in focus 
-        "stocks_heading":   cell("D47"),
-        "stocks_rows_html": stocks_rows_html,
-        # "stocks_source":    cell("A90"),
+    # =======================
+    # Stocks in Focus
+    # =======================
+    "stocks_heading": cell("D47"),
+    "stocks_rows_html": stocks_rows_html,
 
-        # key events
-        "events_heading":   cell("A92"),
-        "events_rows_html": events_rows_html,
-        "events_source":    cell("A101"),
+    # =======================
+    # Key Events
+    # =======================
+    "events_heading": cell("A92"),
+    "events_rows_html": events_rows_html,
+    "events_source": cell("A101"),
 
-        # corporate highlights
-        "corp_heading":   cell("D54"),
-        "corp_rows_html": corp_rows_html,
-        
-    }
+    # =======================
+    # Corporate Highlights
+    # =======================
+    "corp_heading": cell("D54"),
+    "corp_rows_html": corp_rows_html,
+}
 
     wb.close()
     return HTML_TEMPLATE.format(**context)
