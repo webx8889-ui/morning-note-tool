@@ -3,7 +3,6 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from io import BytesIO
-
 from openpyxl import load_workbook
 from datetime import date, datetime
 
@@ -24,11 +23,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # ---------- Helper functions ----------
 
 def cell(ws, addr):
+    """Read a cell value from worksheet, strip if string."""
     v = ws[addr].value
-    return v.strip() if isinstance(v, str) else (v or "")
+    return v.strip() if isinstance(v, str) else (str(v) if v is not None else "")
+
 
 def fmt_number(value, decimals=2):
     if value is None or value == "":
@@ -37,8 +39,9 @@ def fmt_number(value, decimals=2):
         num = float(str(value).replace(",", ""))
         fmt = f"{{:,.{decimals}f}}"
         return fmt.format(num)
-    except ValueError:
+    except (ValueError, TypeError):
         return str(value)
+
 
 def fmt_percent(value, decimals=2, show_sign=True):
     if value is None or value == "":
@@ -54,33 +57,22 @@ def fmt_percent(value, decimals=2, show_sign=True):
         sign = "+" if show_sign and num > 0 else ""
         fmt = f"{{:.{decimals}f}}"
         return f"{sign}{fmt.format(num)}%"
-    except ValueError:
+    except (ValueError, TypeError):
         return s
+
 
 def perc_color(value_str):
     s = str(value_str).strip()
     if not s:
-        return "#111827"
+        return "#6b7280"
     if s.startswith("-"):
         return "#b91c1c"
-    return "#15803d"
+    if s.startswith("+") or (s and s[0].isdigit()):
+        return "#15803d"
+    return "#6b7280"
 
-def fmt_date(v):
-    if isinstance(v, datetime):
-        return v.strftime("%d %b %Y")
-    elif isinstance(v, (int, float)):
-        return str(v)
-    elif isinstance(v, str):
-        for fmt in ("%d-%m-%Y", "%Y-%m-%d", "%d %b %Y"):
-            try:
-                d = datetime.strptime(v.strip(), fmt)
-                return d.strftime("%d %b %Y")
-            except ValueError:
-                continue
-        return v
-    return ""
 
-# ---------- HTML template (matches new template exactly) ----------
+# ---------- HTML Template ----------
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -94,7 +86,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6;">
   <tr>
     <td align="center" valign="top">
-
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:1024px; padding:24px 16px 40px;">
         <tr>
           <td>
@@ -102,13 +93,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <!-- HEADER -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td align="left" valign="middle" style="font-size:14px; font-weight:600; color:#4b5563;">
-                  {date_line}
-                </td>
+                <td align="left" valign="middle" style="font-size:14px; font-weight:600; color:#4b5563;">{date_line}</td>
                 <td align="right" valign="middle">
                   <a href="{podcast_link}">
-                    <img src="https://ekyc.bajajfinservsecurities.in/ekyc/assets/BfslLogo-B8OKXnFb.svg"
-                         alt="Bajaj Broking" style="width:150px; height:auto;"/>
+                    <img src="https://ekyc.bajajfinservsecurities.in/ekyc/assets/BfslLogo-B8OKXnFb.svg" alt="Bajaj Broking" style="width:150px; height:auto;"/>
                   </a>
                 </td>
               </tr>
@@ -117,9 +105,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <!-- MAIN TITLE -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="font-size:28px; font-weight:700; color:#0f172a; padding:16px 0 16px 0;">
-                  {main_heading}
-                </td>
+                <td style="font-size:28px; font-weight:700; color:#0f172a; padding:16px 0 16px 0;">{main_heading}</td>
               </tr>
             </table>
 
@@ -127,90 +113,71 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; box-shadow:0 8px 20px rgba(15,23,42,0.06); margin-bottom:16px;">
               <tr>
                 <td style="padding:16px 18px;">
-
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td style="font-size:18px; font-weight:700; color:#0f172a; padding:0 0 12px 0;">
-                        {market_snapshot_heading}
-                      </td>
+                      <td style="font-size:18px; font-weight:700; color:#0f172a; padding:0 0 12px 0;">{market_snapshot_heading}</td>
                     </tr>
                   </table>
 
-                  <!-- ROW 1: Gift Nifty | Nifty 50 | Sensex -->
+                  <!-- ROW 1 -->
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td valign="top" width="33.33%" style="padding:0 8px 12px 0;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb; border-radius:10px;">
-                          <tr>
-                            <td style="padding:10px 12px;">
-                              <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{gift_label}</div>
-                              <div style="font-size:16px; font-weight:600; color:#111827;">{gift_value}</div>
-                              <div style="font-size:11px; margin-top:2px; color:{gift_color}; font-weight:500;">{gift_change}</div>
-                            </td>
-                          </tr>
+                          <tr><td style="padding:10px 12px;">
+                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{gift_label}</div>
+                            <div style="font-size:16px; font-weight:600; color:#111827;">{gift_value}</div>
+                            <div style="font-size:11px; margin-top:2px; color:{gift_color}; font-weight:500;">{gift_change}</div>
+                          </td></tr>
                         </table>
                       </td>
-
                       <td valign="top" width="33.33%" style="padding:0 8px 12px 0;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb; border-radius:10px;">
-                          <tr>
-                            <td style="padding:10px 12px;">
-                              <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{nifty_label}</div>
-                              <div style="font-size:16px; font-weight:600; color:#111827;">{nifty_value}</div>
-                              <div style="font-size:11px; margin-top:2px; color:{nifty_color}; font-weight:500;">{nifty_change}</div>
-                            </td>
-                          </tr>
+                          <tr><td style="padding:10px 12px;">
+                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{nifty_label}</div>
+                            <div style="font-size:16px; font-weight:600; color:#111827;">{nifty_value}</div>
+                            <div style="font-size:11px; margin-top:2px; color:{nifty_color}; font-weight:500;">{nifty_change}</div>
+                          </td></tr>
                         </table>
                       </td>
-
                       <td valign="top" width="33.33%" style="padding:0 0 12px 0;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb; border-radius:10px;">
-                          <tr>
-                            <td style="padding:10px 12px;">
-                              <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{sensex_label}</div>
-                              <div style="font-size:16px; font-weight:600; color:#111827;">{sensex_value}</div>
-                              <div style="font-size:11px; margin-top:2px; color:{sensex_color}; font-weight:500;">{sensex_change}</div>
-                            </td>
-                          </tr>
+                          <tr><td style="padding:10px 12px;">
+                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{sensex_label}</div>
+                            <div style="font-size:16px; font-weight:600; color:#111827;">{sensex_value}</div>
+                            <div style="font-size:11px; margin-top:2px; color:{sensex_color}; font-weight:500;">{sensex_change}</div>
+                          </td></tr>
                         </table>
                       </td>
                     </tr>
 
-                    <!-- ROW 2: Bank Nifty | India VIX | USDINR -->
+                    <!-- ROW 2 -->
                     <tr>
                       <td valign="top" width="33.33%" style="padding:0 8px 12px 0;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb; border-radius:10px;">
-                          <tr>
-                            <td style="padding:10px 12px;">
-                              <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{bank_label}</div>
-                              <div style="font-size:16px; font-weight:600; color:#111827;">{bank_value}</div>
-                              <div style="font-size:11px; margin-top:2px; color:{bank_color}; font-weight:500;">{bank_change}</div>
-                            </td>
-                          </tr>
+                          <tr><td style="padding:10px 12px;">
+                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{bank_label}</div>
+                            <div style="font-size:16px; font-weight:600; color:#111827;">{bank_value}</div>
+                            <div style="font-size:11px; margin-top:2px; color:{bank_color}; font-weight:500;">{bank_change}</div>
+                          </td></tr>
                         </table>
                       </td>
-
                       <td valign="top" width="33.33%" style="padding:0 8px 12px 0;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb; border-radius:10px;">
-                          <tr>
-                            <td style="padding:10px 12px;">
-                              <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{vix_label}</div>
-                              <div style="font-size:16px; font-weight:600; color:#111827;">{vix_value}</div>
-                              <div style="font-size:11px; margin-top:2px; color:{vix_color}; font-weight:500;">{vix_change}</div>
-                            </td>
-                          </tr>
+                          <tr><td style="padding:10px 12px;">
+                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{vix_label}</div>
+                            <div style="font-size:16px; font-weight:600; color:#111827;">{vix_value}</div>
+                            <div style="font-size:11px; margin-top:2px; color:{vix_color}; font-weight:500;">{vix_change}</div>
+                          </td></tr>
                         </table>
                       </td>
-
                       <td valign="top" width="33.33%" style="padding:0 0 12px 0;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb; border-radius:10px;">
-                          <tr>
-                            <td style="padding:10px 12px;">
-                              <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{usdinr_label}</div>
-                              <div style="font-size:16px; font-weight:600; color:#111827;">{usdinr_value}</div>
-                              <div style="font-size:11px; margin-top:2px; color:{usdinr_color}; font-weight:500;">{usdinr_change}</div>
-                            </td>
-                          </tr>
+                          <tr><td style="padding:10px 12px;">
+                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px;">{usdinr_label}</div>
+                            <div style="font-size:16px; font-weight:600; color:#111827;">{usdinr_value}</div>
+                            <div style="font-size:11px; margin-top:2px; color:{usdinr_color}; font-weight:500;">{usdinr_change}</div>
+                          </td></tr>
                         </table>
                       </td>
                     </tr>
@@ -225,26 +192,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                             <td style="padding:16px 18px;">
                               <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
                                 <tr>
-                                  <td style="padding:4px 10px; border-radius:999px; background:#1f2937; color:#e5e7eb; font-size:11px; font-weight:500;">
-                                    {podcast_tagline}
-                                  </td>
+                                  <td style="padding:4px 10px; border-radius:999px; background:#1f2937; color:#e5e7eb; font-size:11px; font-weight:500;">{podcast_tagline}</td>
                                 </tr>
                               </table>
-                              <p style="font-size:12px; margin:8px 0 0; line-height:1.5; color:#e5e7eb;">
-                                {podcast_para1}
-                              </p>
+                              <p style="font-size:12px; margin:8px 0 0; line-height:1.5; color:#e5e7eb;">{podcast_para1}</p>
                               <table cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;">
                                 <tr>
                                   <td align="center" style="background:#005DAC; border-radius:999px;">
-                                    <a href="{podcast_link}" style="display:block; padding:8px 16px; font-size:12px; font-weight:600; color:#facc15; text-decoration:none;">
-                                      🎧 LISTEN NOW 🎧
-                                    </a>
+                                    <a href="{podcast_link}" style="display:block; padding:8px 16px; font-size:12px; font-weight:600; color:#facc15; text-decoration:none;">🎧 LISTEN NOW 🎧</a>
                                   </td>
                                 </tr>
                               </table>
-                              <div style="font-size:11px; margin-top:6px; color:#e5e7eb;">
-                                {podcast_footer}
-                              </div>
+                              <div style="font-size:11px; margin-top:6px; color:#9ca3af;">{podcast_footer}</div>
                             </td>
                           </tr>
                         </table>
@@ -258,52 +217,29 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
             <!-- INDIA MARKET RECAP -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
-              <tr>
-                <td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">
-                  {recap_heading}
-                </td>
-              </tr>
+              <tr><td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">{recap_heading}</td></tr>
             </table>
-
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; box-shadow:0 8px 20px rgba(15,23,42,0.06); margin-bottom:16px;">
               <tr>
                 <td style="padding:16px 18px;">
-                  <p style="font-size:14px; line-height:1.6; margin:0 0 12px 0;">
-                    {recap_para1}
-                  </p>
-                  <p style="font-size:14px; line-height:1.6; margin:0 0 12px 0;">
-                    {recap_para2}
-                  </p>
-                  <p style="font-size:14px; line-height:1.6; margin:0 0 12px 0;">
-                    {recap_para3}
-                  </p>
-                  <p style="font-size:11px; color:#6b7280; margin:0;">
-                    {recap_source}
-                  </p>
+                  <p style="font-size:14px; line-height:1.6; margin:0 0 12px 0;">{recap_para1}</p>
+                  <p style="font-size:14px; line-height:1.6; margin:0 0 12px 0;">{recap_para2}</p>
+                  <p style="font-size:14px; line-height:1.6; margin:0 0 12px 0;">{recap_para3}</p>
+                  <p style="font-size:11px; color:#6b7280; margin:0;">{recap_source}</p>
                 </td>
               </tr>
             </table>
 
             <!-- TRADING PLAYBOOK -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
-              <tr>
-                <td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">
-                  {playbook_heading}
-                </td>
-              </tr>
+              <tr><td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">{playbook_heading}</td></tr>
             </table>
-
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; box-shadow:0 8px 20px rgba(15,23,42,0.06); margin-bottom:16px;">
               <tr>
                 <td style="padding:16px 18px;">
-
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                    <tr>
-                      <td style="font-size:14px; font-weight:600; color:#374151; padding-bottom:4px;">{flows_heading}</td>
-                    </tr>
-                    <tr>
-                      <td style="font-size:11px; color:#6b7280; padding-bottom:10px;">{flows_subtext}</td>
-                    </tr>
+                    <tr><td style="font-size:14px; font-weight:600; color:#374151; padding-bottom:4px;">{flows_heading}</td></tr>
+                    <tr><td style="font-size:11px; color:#6b7280; padding-bottom:10px;">{flows_subtext}</td></tr>
                   </table>
 
                   <!-- FII/DII TABLE -->
@@ -370,38 +306,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
             <!-- GLOBAL MARKET PULSE -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
-              <tr>
-                <td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">
-                  {global_heading}
-                </td>
-              </tr>
+              <tr><td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">{global_heading}</td></tr>
             </table>
-
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; box-shadow:0 8px 20px rgba(15,23,42,0.06); margin-bottom:16px;">
               <tr>
                 <td style="padding:16px 18px;">
-                  <p style="font-size:14px; line-height:1.6; margin:0 0 10px 0;">
-                    {global_para1}
-                  </p>
-                  <p style="font-size:14px; line-height:1.6; margin:0 0 10px 0;">
-                    {global_para2}
-                  </p>
-                  <p style="font-size:11px; color:#6b7280; margin:0;">
-                    {global_source}
-                  </p>
+                  <p style="font-size:14px; line-height:1.6; margin:0 0 10px 0;">{global_para1}</p>
+                  <p style="font-size:11px; color:#6b7280; margin:0;">{global_source}</p>
                 </td>
               </tr>
             </table>
 
             <!-- STOCKS IN FOCUS -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
-              <tr>
-                <td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">
-                  {stocks_heading}
-                </td>
-              </tr>
+              <tr><td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">{stocks_heading}</td></tr>
             </table>
-
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; box-shadow:0 8px 20px rgba(15,23,42,0.06); margin-bottom:16px;">
               <tr>
                 <td style="padding:16px 18px;">
@@ -414,26 +333,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         <th align="left" style="padding:8px 6px; background:#eff6ff; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:#111827;">Interpretation</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {stocks_rows_html}
-                    </tbody>
+                    <tbody>{stocks_rows_html}</tbody>
                   </table>
-                  <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">
-                    {stocks_source}
-                  </p>
+                  <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">{stocks_source}</p>
                 </td>
               </tr>
             </table>
 
-            <!-- STOCKS IN NEWS / CORPORATE HIGHLIGHTS -->
+            <!-- CORPORATE HIGHLIGHTS -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
-              <tr>
-                <td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">
-                  {corp_heading}
-                </td>
-              </tr>
+              <tr><td style="font-size:18px; font-weight:700; color:#0f172a; padding-bottom:12px;">{corp_heading}</td></tr>
             </table>
-
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; box-shadow:0 8px 20px rgba(15,23,42,0.06);">
               <tr>
                 <td style="padding:16px 18px;">
@@ -444,13 +354,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         <th align="left" style="padding:8px 6px; background:#eff6ff; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:#111827;">Update</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {corp_rows_html}
-                    </tbody>
+                    <tbody>{corp_rows_html}</tbody>
                   </table>
-                  <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">
-                    {corp_source}
-                  </p>
+                  <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">{corp_source}</p>
                 </td>
               </tr>
             </table>
@@ -475,244 +381,193 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </td>
   </tr>
 </table>
-
 </body>
-</html>
-"""
+</html>"""
 
-# ---------- Core generator using Excel ----------
+
+# ---------- Core generator ----------
 
 def generate_html_from_excel(excel_bytes: bytes) -> str:
     wb = load_workbook(BytesIO(excel_bytes), data_only=True)
     ws = wb["Sheet1"]
 
-    # ----- MARKET SNAPSHOT -----
-    raw_gift_value   = cell("D9")
-    raw_gift_change  = cell("D10")
-    raw_nifty_value  = cell("G9")
-    raw_nifty_change = cell("G10")
-    raw_sensex_value = cell("J9")
-    raw_sensex_change= cell("J10")
+    # ── MARKET SNAPSHOT ──────────────────────────────────────────
+    raw_gift_value    = cell(ws, "D9")
+    raw_gift_change   = cell(ws, "D10")
+    raw_nifty_value   = cell(ws, "G9")
+    raw_nifty_change  = cell(ws, "G10")
+    raw_sensex_value  = cell(ws, "J9")
+    raw_sensex_change = cell(ws, "J10")
 
-    raw_bank_value   = cell("D13")
-    raw_bank_change  = cell("D14")
-    raw_vix_value    = cell("G13")
-    raw_vix_change   = cell("G14")
-    raw_usdinr_value = cell("J13")
-    raw_usdinr_change= cell("J14")
+    raw_bank_value    = cell(ws, "D13")
+    raw_bank_change   = cell(ws, "D14")
+    raw_vix_value     = cell(ws, "G13")
+    raw_vix_change    = cell(ws, "G14")
+    raw_usdinr_value  = cell(ws, "J13")
+    raw_usdinr_change = cell(ws, "J14")
 
-
-    gift_value    = fmt_number(raw_gift_value, 1)
-    gift_change   = fmt_percent(raw_gift_change, 2)
-    nifty_value   = fmt_number(raw_nifty_value, 2)
+    gift_value    = fmt_number(raw_gift_value,   1)
+    gift_change   = fmt_percent(raw_gift_change,  2)
+    nifty_value   = fmt_number(raw_nifty_value,  2)
     nifty_change  = fmt_percent(raw_nifty_change, 2)
-    sensex_value  = fmt_number(raw_sensex_value, 2)
-    sensex_change = fmt_percent(raw_sensex_change, 2)
+    sensex_value  = fmt_number(raw_sensex_value,  2)
+    sensex_change = fmt_percent(raw_sensex_change,2)
+    bank_value    = fmt_number(raw_bank_value,   2)
+    bank_change   = fmt_percent(raw_bank_change,  2)
+    vix_value     = fmt_number(raw_vix_value,    2)
+    vix_change    = fmt_percent(raw_vix_change,   2)
+    usdinr_value  = fmt_number(raw_usdinr_value,  2)
+    usdinr_change = fmt_percent(raw_usdinr_change,2)
 
-    bank_value    = fmt_number(raw_bank_value, 2)
-    bank_change   = fmt_percent(raw_bank_change, 2)
-    vix_value     = fmt_number(raw_vix_value, 2)
-    vix_change    = fmt_percent(raw_vix_change, 2)
-    usdinr_value  = fmt_number(raw_usdinr_value, 4)
-    usdinr_change = fmt_percent(raw_usdinr_change, 2)
+    # ── FII / DII ─────────────────────────────────────────────────
+    raw_fii_prev = cell(ws, "F33")
+    raw_fii_mtd  = cell(ws, "H33")
+    raw_fii_ytd  = cell(ws, "J33")
+    raw_dii_prev = cell(ws, "F34")
+    raw_dii_mtd  = cell(ws, "H34")
+    raw_dii_ytd  = cell(ws, "J34")
 
-    # ----- FII/DII -----
-    playbook_heading = cell("D30")
-    flows_heading    = cell("D31")
-    
+    fii_prev = fmt_number(raw_fii_prev, 2) or "—"
+    fii_mtd  = fmt_number(raw_fii_mtd,  2) or "—"
+    fii_ytd  = fmt_number(raw_fii_ytd,  2) or "—"
+    dii_prev = fmt_number(raw_dii_prev, 2) or "—"
+    dii_mtd  = fmt_number(raw_dii_mtd,  2) or "—"
+    dii_ytd  = fmt_number(raw_dii_ytd,  2) or "—"
 
-    # RAW values from cells
-    raw_fii_prev = cell("F33")
-    raw_fii_mtd  = cell("H33")
-    raw_fii_ytd  = cell("J33")
-
-    raw_dii_prev = cell("F34")
-    raw_dii_mtd  = cell("H34")
-    raw_dii_ytd  = cell("J34")
-
-    fii_prev = fmt_number(raw_fii_prev, 0)
-    fii_mtd  = fmt_number(raw_fii_mtd, 2)
-    fii_ytd  = fmt_number(raw_fii_ytd, 2)
-    dii_prev = fmt_number(raw_dii_prev, 0)
-    dii_mtd  = fmt_number(raw_dii_mtd, 2)
-    dii_ytd  = fmt_number(raw_dii_ytd, 2)
-
-   
-
-    # ----- STOCKS IN FOCUS -----
-    # New HTML: columns are Symbol | Price% | OI% | Interpretation (no Bucket column)
+    # ── STOCKS IN FOCUS (Long/Short Build-up) ────────────────────
+    # Excel rows 49–52: D=Symbol, F=Price%, H=OI%, J=Interpretation
     stocks_rows_html = ""
-    for r in range(49, 52):
-       symbol  = cell(f"D{r}")
-       raw_price = cell(f"F{r}")
-       raw_oi    = cell(f"H{r}")
-       interp    = cell(f"J{r}")
+    for r in range(49, 53):
+        symbol = cell(ws, f"D{r}")
+        raw_price = cell(ws, f"F{r}")
+        raw_oi    = cell(ws, f"H{r}")
+        interp    = cell(ws, f"J{r}")
 
-        if not (symbol or stock or raw_price or raw_oi or interp):
-            break
+        if not symbol:
+            continue
 
-       
-        symbol = stock if stock else symbol
-        price  = fmt_percent(raw_price, 2, show_sign=False)
-        oi     = fmt_percent(raw_oi, 2, show_sign=False)
+        price = fmt_percent(raw_price, 2, show_sign=True)
+        oi    = fmt_percent(raw_oi,    2, show_sign=True)
+        p_color = perc_color(price)
+        o_color = perc_color(oi)
 
         stocks_rows_html += f"""
       <tr>
         <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{symbol}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{price}</td>
-        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{oi}</td>
+        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb; color:{p_color}; font-weight:500;">{price}</td>
+        <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb; color:{o_color}; font-weight:500;">{oi}</td>
         <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{interp}</td>
       </tr>"""
 
-    # ----- CORPORATE HIGHLIGHTS -----
+    # ── CORPORATE / STOCKS IN NEWS ───────────────────────────────
+    # Excel rows 56–65: D=Company, H=Update
     corp_rows_html = ""
-    for r in range(56, 60):
-        company = cell(f"D{r}")
-        update  = cell(f"{r}")
-        if not (company or update):
-            break
+    for r in range(56, 66):
+        company = cell(ws, f"D{r}")
+        update  = cell(ws, f"H{r}")
+        if not company:
+            continue
         corp_rows_html += f"""
       <tr>
         <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;"><strong>{company}</strong></td>
         <td style="padding:8px 6px; border-bottom:1px solid #e5e7eb;">{update}</td>
       </tr>"""
 
-    # ----- BUILD CONTEXT -----
+    # ── BUILD FULL CONTEXT ────────────────────────────────────────
+    today_str = datetime.today().strftime("%A, %d %B %Y")
+
     context = {
-    # =======================
-    # Top Level
-    # =======================
-    "date_line": cell("D2"),
-    "main_heading": cell("D3"),
+        # Header
+        "title":                  f"Bajaj Broking Morning Note – {datetime.today().strftime('%d %B %Y')}",
+        "date_line":              cell(ws, "D2") or today_str,
+        "main_heading":           cell(ws, "D3") or "Bajaj Broking Morning Note",
 
-    # =======================
-    # Market Snapshot – Labels
-    # =======================
-    "market_snapshot_heading": cell("D6"),
-    "gift_label": cell("G8"),
-    "nifty_label": cell("B5"),
-    "sensex_label": cell("J8"),
-    "bank_label": cell("D12"),
-    "vix_label": cell("G12"),
-    "usdinr_label": cell("J12"),
+        # Market Snapshot
+        "market_snapshot_heading": cell(ws, "D6") or "Market Snapshot",
+        "gift_label":             cell(ws, "D8")  or "GIFT Nifty*",
+        "nifty_label":            cell(ws, "G8")  or "Nifty 50*",
+        "sensex_label":           cell(ws, "J8")  or "Sensex^",
+        "bank_label":             cell(ws, "D12") or "Bank Nifty*",
+        "vix_label":              cell(ws, "G12") or "India VIX*",
+        "usdinr_label":           cell(ws, "J12") or "USDINR*",
 
-    # =======================
-    # Market Snapshot – Values
-    # =======================
-    "gift_value": gift_value,
-    "gift_change": gift_change,
-    "gift_color": perc_color(gift_change),
+        "gift_value":   gift_value,   "gift_change":   gift_change,   "gift_color":   perc_color(gift_change),
+        "nifty_value":  nifty_value,  "nifty_change":  nifty_change,  "nifty_color":  perc_color(nifty_change),
+        "sensex_value": sensex_value, "sensex_change": sensex_change, "sensex_color": perc_color(sensex_change),
+        "bank_value":   bank_value,   "bank_change":   bank_change,   "bank_color":   perc_color(bank_change),
+        "vix_value":    vix_value,    "vix_change":    vix_change,    "vix_color":    perc_color(vix_change),
+        "usdinr_value": usdinr_value, "usdinr_change": usdinr_change, "usdinr_color": perc_color(usdinr_change),
 
-    "nifty_value": nifty_value,
-    "nifty_change": nifty_change,
-    "nifty_color": perc_color(nifty_change),
+        # Podcast
+        "podcast_tagline": cell(ws, "D18") or "Today's 3-min Podcast",
+        "podcast_para1":   cell(ws, "D19"),
+        "podcast_link":    cell(ws, "D22") or "https://open.spotify.com/show/4T3szhxvlaEuiMpryokCGo",
+        "podcast_footer":  cell(ws, "D23") or "",
 
-    "sensex_value": sensex_value,
-    "sensex_change": sensex_change,
-    "sensex_color": perc_color(sensex_change),
+        # India Market Recap
+        "recap_heading": cell(ws, "D24") or "India Market Recap",
+        "recap_para1":   cell(ws, "D25"),
+        "recap_para2":   cell(ws, "D26") or "",
+        "recap_para3":   cell(ws, "D27") or "",
+        "recap_source":  cell(ws, "D28") or f"Source: Bajaj Broking Research Desk ({datetime.today().strftime('%d %b %Y')}).",
 
-    "bank_value": bank_value,
-    "bank_change": bank_change,
-    "bank_color": perc_color(bank_change),
+        # Trading Playbook
+        "playbook_heading": cell(ws, "D30") or "Trading Playbook",
+        "flows_heading":    cell(ws, "D31") or "FII/DII Flows (Cash)",
+        "flows_subtext":    cell(ws, "D32") or "Previous Day, MTD & YTD",
+        "fii_prev": fii_prev, "fii_prev_color": perc_color(raw_fii_prev),
+        "fii_mtd":  fii_mtd,  "fii_mtd_color":  perc_color(raw_fii_mtd),
+        "fii_ytd":  fii_ytd,  "fii_ytd_color":  perc_color(raw_fii_ytd),
+        "dii_prev": dii_prev, "dii_prev_color": perc_color(raw_dii_prev),
+        "dii_mtd":  dii_mtd,  "dii_mtd_color":  perc_color(raw_dii_mtd),
+        "dii_ytd":  dii_ytd,  "dii_ytd_color":  perc_color(raw_dii_ytd),
+        "flows_source":  cell(ws, "D35") or "Source: NSE / Bajaj Broking Research.",
 
-    "vix_value": vix_value,
-    "vix_change": vix_change,
-    "vix_color": perc_color(vix_change),
+        # Range Table
+        "range_heading":    cell(ws, "D36") or "Range to Track – Key Index Levels",
+        "range_row1_index": cell(ws, "D38"),
+        "range_row1_s1":    fmt_number(cell(ws, "E38"), 0),
+        "range_row1_s2":    fmt_number(cell(ws, "G38"), 0),
+        "range_row1_r1":    fmt_number(cell(ws, "I38"), 0),
+        "range_row1_r2":    fmt_number(cell(ws, "K38"), 0),
+        "range_row2_index": cell(ws, "D39"),
+        "range_row2_s1":    fmt_number(cell(ws, "E39"), 0),
+        "range_row2_s2":    fmt_number(cell(ws, "G39"), 0),
+        "range_row2_r1":    fmt_number(cell(ws, "I39"), 0),
+        "range_row2_r2":    fmt_number(cell(ws, "K39"), 0),
+        "range_comment":    cell(ws, "D40") or "Source: Bajaj Broking Technical Research Desk.",
 
-    "usdinr_value": usdinr_value,
-    "usdinr_change": usdinr_change,
-    "usdinr_color": perc_color(usdinr_change),
+        # Global Market Pulse
+        "global_heading": cell(ws, "D41") or "Global Market Pulse",
+        "global_para1":   cell(ws, "D42"),
+        "global_source":  cell(ws, "D43") or "Source: Reuters, Bloomberg.",
 
-    # =======================
-    # Podcast Section
-    # =======================
-    "podcast_tagline": cell("D18"),
-    "podcast_para1": cell("D19"),
-    "podcast_link": cell("D22"),
+        # Stocks in Focus
+        "stocks_heading":   cell(ws, "D47") or "Stocks in Focus",
+        "stocks_rows_html": stocks_rows_html,
+        "stocks_source":    cell(ws, "D53") or "Source: NSE F&O Data, Bajaj Broking Research.",
 
-    # =======================
-    # Recap Section
-    # =======================
-    "recap_heading": cell("D24"),
-    "recap_para1": cell("D25"),
-    "recap_source": cell("A17"),
+        # Corporate Highlights
+        "corp_heading":   cell(ws, "D54") or "Stocks in News",
+        "corp_rows_html": corp_rows_html,
+        "corp_source":    cell(ws, "D66") or "Source: BSE/NSE Corporate Filings.",
 
-    # =======================
-    # Trading Playbook / Flows
-    # =======================
-    "playbook_heading": playbook_heading,
-    "flows_heading": flows_heading,
-    "flows_subtext": flows_subtext,
-
-    "fii_prev": fii_prev,
-    "fii_prev_color": perc_color(fii_prev),
-    "fii_mtd": fii_mtd,
-    "fii_mtd_color": perc_color(fii_mtd),
-    "fii_ytd": fii_ytd,
-    "fii_ytd_color": perc_color(fii_ytd),
-
-    "dii_prev": dii_prev,
-    "dii_prev_color": perc_color(dii_prev),
-    "dii_mtd": dii_mtd,
-    "dii_mtd_color": perc_color(dii_mtd),
-    "dii_ytd": dii_ytd,
-    "dii_ytd_color": perc_color(dii_ytd),
-
-    "flows_source": flows_source,
-
-    # =======================
-    # Range Table
-    # =======================
-    "range_heading": cell("D36"),
-
-    "range_row1_index": cell("D38"),
-    "range_row1_s1": fmt_number(cell("E38"), 0),
-    "range_row1_s2": fmt_number(cell("G38"), 0),
-    "range_row1_r1": fmt_number(cell("I38"), 0),
-    "range_row1_r2": fmt_number(cell("K38"), 0),
-
-    "range_row2_index": cell("A31"),
-    "range_row2_s1": fmt_number(cell("E39"), 0),
-    "range_row2_s2": fmt_number(cell("G39"), 0),
-    "range_row2_r1": fmt_number(cell("I39"), 0),
-    "range_row2_r2": fmt_number(cell("K39"), 0),
-
-    # =======================
-    # Global Market
-    # =======================
-    "global_heading": cell("D41"),
-    "global_para1": cell("D42"),
-
-    # =======================
-    # Stocks in Focus
-    # =======================
-    "stocks_heading": cell("D47"),
-    "stocks_rows_html": stocks_rows_html,
-
-    # =======================
-    # Key Events
-    # =======================
-    "events_heading": cell("A92"),
-    "events_rows_html": events_rows_html,
-    "events_source": cell("A101"),
-
-    # =======================
-    # Corporate Highlights
-    # =======================
-    "corp_heading": cell("D54"),
-    "corp_rows_html": corp_rows_html,
-}
+        # Disclaimer
+        "note_text": cell(ws, "D68") or (
+            f"This Morning Note is prepared using information verified by the Bajaj Broking research team "
+            f"dated {datetime.today().strftime('%d/%m/%Y')} and other publicly available sources. "
+            "It is meant for informational purposes only and does not constitute investment advice."
+        ),
+    }
 
     wb.close()
     return HTML_TEMPLATE.format(**context)
+
 
 # ---------- FastAPI endpoint ----------
 
 @app.post("/generate-html")
 async def generate_html(file: UploadFile = File(...)):
-    """
-    Upload Excel, get Morning Note HTML.
-    """
     excel_bytes = await file.read()
     html_str = generate_html_from_excel(excel_bytes)
 
