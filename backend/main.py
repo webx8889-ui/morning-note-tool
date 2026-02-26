@@ -337,7 +337,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     </thead>
                     <tbody>{stocks_rows_html}</tbody>
                   </table>
-                  # <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">{stocks_source}</p>
+                  <p style="font-size:11px; color:#6b7280; margin:8px 0 0 0;">{stocks_source}</p>
                 </td>
               </tr>
             </table>
@@ -548,7 +548,7 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
         # Stocks in Focus
         "stocks_heading":   cell(ws, "D47") or "Stocks in Focus",
         "stocks_rows_html": stocks_rows_html,
-        # "stocks_source":    cell(ws, "D54") or "Source: NSE F&O Data, Bajaj Broking Research.",
+        "stocks_source":    cell(ws, "D53") or "Source: NSE F&O Data, Bajaj Broking Research.",
 
         # Corporate Highlights
         "corp_heading":   cell(ws, "D54") or "Stocks in News",
