@@ -98,7 +98,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <td align="left" valign="middle" style="font-size:14px; font-weight:600; color:#4b5563;">{date_line}</td>
                 <td align="right" valign="middle">
                   <a href="{podcast_link}">
-                    <img src="https://ekyc.bajajfinservsecurities.in/ekyc/assets/BfslLogo-B8OKXnFb.svg" alt="Bajaj Broking" style="width:150px; height:auto;"/>
+                    <img src="https://res.cloudinary.com/dqhtbzeuj/image/upload/v1772081294/Bajaj_broking_logo_fbos5n.jpg" alt="Bajaj Broking" style="width:150px; height:auto;"/>
                   </a>
                 </td>
               </tr>
