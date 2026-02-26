@@ -464,7 +464,7 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     corp_rows_html = ""
     for r in range(57, 61):
         company = cell(ws, f"D{r}")
-        update  = cell(ws, f"H{r}")
+        update  = cell(ws, f"G{r}")
         if not company:
             continue
         corp_rows_html += f"""
