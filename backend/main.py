@@ -311,7 +311,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; box-shadow:0 8px 20px rgba(15,23,42,0.06); margin-bottom:16px;">
               <tr>
                 <td style="padding:16px 18px;">
-                  <p style="font-size:14px; line-height:1.6; margin:0 0 10px 0;">{global_para1}</p>
+                  <p style="font-size:14px; line-height:1.6; margin:0 0 10px 0;">{global_para1}</p> 
                   <p style="font-size:11px; color:#6b7280; margin:0;">{global_source}</p>
                 </td>
               </tr>
@@ -350,8 +350,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:12px; border-collapse:collapse;">
                     <thead>
                       <tr>
-                        <th align="left" style="padding:8px 6px; background:#eff6ff; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:#111827;">Company / Theme</th>
-                        <th align="left" style="padding:8px 6px; background:#eff6ff; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:#111827;">Update</th>
+                        <th align="left" style="padding:8px 6px; background:#eff6ff; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:#111827;">Company</th>
+                        <th align="left" style="padding:8px 6px; background:#eff6ff; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:#111827;">Key News / Impact</th>
                       </tr>
                     </thead>
                     <tbody>{corp_rows_html}</tbody>
@@ -437,7 +437,7 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     # ── STOCKS IN FOCUS (Long/Short Build-up) ────────────────────
     # Excel rows 49–52: D=Symbol, F=Price%, H=OI%, J=Interpretation
     stocks_rows_html = ""
-    for r in range(49, 53):
+    for r in range(49, 54):
         symbol = cell(ws, f"D{r}")
         raw_price = cell(ws, f"F{r}")
         raw_oi    = cell(ws, f"H{r}")
@@ -462,7 +462,7 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
     # ── CORPORATE / STOCKS IN NEWS ───────────────────────────────
     # Excel rows 56–65: D=Company, H=Update
     corp_rows_html = ""
-    for r in range(56, 66):
+    for r in range(57, 61):
         company = cell(ws, f"D{r}")
         update  = cell(ws, f"H{r}")
         if not company:
@@ -540,7 +540,8 @@ def generate_html_from_excel(excel_bytes: bytes) -> str:
         # Global Market Pulse
         "global_heading": cell(ws, "D41") or "Global Market Pulse",
         "global_para1":   cell(ws, "D42"),
-        "global_source":  cell(ws, "D43") or "Source: Reuters, Bloomberg.",
+        
+        "global_source":  cell(ws, "D46") or "Source: Reuters, Bloomberg.",
 
         # Stocks in Focus
         "stocks_heading":   cell(ws, "D47") or "Stocks in Focus",
